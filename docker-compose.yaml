@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  postgres:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./docker/db/Dockerfile
+    container_name: taskdb
+    ports:
+      - '${DB_PORT}:${DB_PORT}'
+    environment:
+      HOST: ${DB_HOST}
+      POSTGRES_PASSWORD: ${POSTGRES_PW}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+  task_app:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./docker/task_app/Dockerfile
+      target: dev
+    depends_on:
+      - postgres
+    environment:
+      HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      API_PORT: ${API_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PW: ${POSTGRES_PW}
+      POSTGRES_DB: ${POSTGRES_DB}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
+      SALT_ROUNDS: ${SALT_ROUNDS}
+    ports:
+      - '${API_PORT}:${API_PORT}'
+    volumes:
+      - ./src:/usr/src/task_manager/src
+  cache:
+    image: redis:latest
+      

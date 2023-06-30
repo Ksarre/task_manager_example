@@ -1,0 +1,8 @@
+**/node_modules
+**/.git
+**.md
+**.rest
+pgdata/**
+!README*.md
+.prettierrc
+.eslintrc.json
