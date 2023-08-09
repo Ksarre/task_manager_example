@@ -1,29 +1,39 @@
 version: '3.8'
 services:
   postgres:
+    networks:
+      - task_app_network
     restart: unless-stopped
     build:
       context: .
       dockerfile: ./docker/db/Dockerfile
-    container_name: taskdb
+    container_name: task_db
+    hostname: task_db
     ports:
       - '${DB_PORT}:${DB_PORT}'
     environment:
-      HOST: ${DB_HOST}
+      DB_HOST: ${DB_HOST}
       POSTGRES_PASSWORD: ${POSTGRES_PW}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - ./pgdata:/var/lib/postgresql/data
   task_app:
+    networks:
+      - task_app_network
     restart: unless-stopped
+    container_name: task_app
+    hostname: task_app
     build:
       context: .
       dockerfile: ./docker/task_app/Dockerfile
       target: dev
     depends_on:
       - postgres
+      - redis
     environment:
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_HOST: ${REDIS_HOST}
       HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       API_PORT: ${API_PORT}
@@ -37,8 +47,15 @@ services:
       - '${API_PORT}:${API_PORT}'
     volumes:
       - ./src:/usr/src/task_manager/src
-  cache:
+  redis:
+    networks:
+      - task_app_network
+    container_name: redis
+    hostname: ${REDIS_HOST}
     image: redis:latest
-    environment:
-      REDIS_PORT: ${REDIS_PORT}
-      
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT}:${REDIS_PORT}'
+networks:
+  task_app_network:
+    driver: bridge
