@@ -1,9 +1,14 @@
 const jwt = require('jsonwebtoken')
+const { promisify } = require('util')
+const { getIp } = require('../util/APIUtils')
 const ApiError = require('../error/api_error')
 const { logger } = require('../util/logger')
+const { client: redis } = require('../config/redis')
+
+const verify = promisify(jwt.verify)
 
 // Checks that a request provides a proper auth header
-async function validateHeader(req) {
+function validateAuthHeader(req) {
     const authHeader = req.headers.Authorization || req.headers.authorization
 
     if (authHeader == null)
@@ -14,15 +19,8 @@ async function validateHeader(req) {
     return token
 }
 
-const accessTokenExpiry = '30m'
-const refreshTokenExpiry = '5d'
-
-// verify wrapper
-async function verifyToken(token, secret, options) {
-    return options === undefined
-        ? jwt.verify(token, secret)
-        : jwt.verify(token, secret, options)
-}
+const accessTokenExpiry = '1m'
+const refreshTokenExpiry = '5m'
 
 function signTokens(req) {
     const user = { username: req.body.username, ip: req.ip }
@@ -35,8 +33,8 @@ function signTokens(req) {
     return { accessToken, refreshToken }
 }
 
-function signAccessToken(req) {
-    const user = { username: req.body.username, ip: req.ip }
+function signAccessToken(username, ip) {
+    const user = { username, ip }
     const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: accessTokenExpiry,
     })
@@ -44,44 +42,80 @@ function signAccessToken(req) {
     return accessToken
 }
 
+async function getRefreshToken(decodedAccessToken) {
+    if (!redis.isReady) await redis.connect()
+    const results = await redis.get(`${decodedAccessToken.username}Token`)
+    return results
+}
+
+// throws redis errors and jwt.verify errors
+async function verifyRefreshToken(decodedAccessToken) {
+    const results = await getRefreshToken(decodedAccessToken)
+
+    logger.info({ results, target: 'Redis' })
+
+    // TODO: Would be helpful to enhance the redis client to JSON.stringify input
+    // and JSON.parse output
+    const decodedRefreshToken = await verify(
+        JSON.parse(results[0]),
+        process.env.REFRESH_TOKEN_SECRET,
+    )
+    return decodedRefreshToken
+}
+
 // checks validity of the provided access token
 function authenticate(req, res, next) {
-    validateHeader(req)
-        .then((token) => verifyToken(token, process.env.ACCESS_TOKEN_SECRET))
+    const token = validateAuthHeader(req)
+    req.userData = {}
+
+    verify(token, process.env.ACCESS_TOKEN_SECRET)
         .then((decodedToken) => {
-            logger.info(`Authenticated @user: ${JSON.stringify(decodedToken)}`)
+            logger.info(
+                { user: JSON.stringify(decodedToken) },
+                'Authenticated user',
+            )
             req.userData = decodedToken
             next()
         })
         .catch((err) => {
             // wrap with ApiError if its an internal jwt.verify error
-            // otherwise go through the normal flow
-            const redis = [{}]
             if (err.name === 'TokenExpiredError') {
-                verifyToken(redis[0], process.env.REFRESH_TOKEN_SECRET)
-                    .then((decodedToken) => {
-                        logger.info(
-                            `Authenticated @user: ${JSON.stringify(
-                                decodedToken,
-                            )}`,
+                const decodedToken = jwt.decode(token)
+                logger.info('verifying refresh token')
+                verifyRefreshToken(decodedToken)
+                    .then((decodedRefreshToken) => {
+                        logger.info('generating new access token')
+                        const accessToken = signAccessToken(
+                            decodedRefreshToken.username,
+                            getIp(req),
                         )
-                        req.userData = decodedToken
-                        const accessToken = signAccessToken(req)
-                        res.json({ token: accessToken })
+                        logger.info(
+                            'Authenticated user',
+                            JSON.stringify(decodedRefreshToken.username),
+                        )
+                        req.userData = decodedRefreshToken
+                        res.append('token', accessToken)
                         next()
                     })
-                    .catch(
+                    .catch((refreshErr) => {
+                        // logger.err(err)
                         next(
                             ApiError.ForbiddenError(
-                                `Access to ${req.url} was denied.`,
+                                `Access to ${req.url} was denied.\n ${refreshErr.message}`,
+                                err,
                             ),
-                        ),
-                    )
+                        )
+                    })
             } else if (err.name === 'JsonWebTokenError') {
+                // logger.err(err)
                 next(
-                    ApiError.ForbiddenError(`Access to ${req.url} was denied.`),
+                    ApiError.ForbiddenError(
+                        `Access to ${req.url} was denied.\n ${err.message}`,
+                        err,
+                    ),
                 )
             } else {
+                logger.info('Unexpected authentication error')
                 next(err)
             }
         })
@@ -130,4 +164,4 @@ function authenticate(req, res, next) {
 //     }
 // }
 
-module.exports = { authenticate, signAccessToken, signTokens, verifyToken }
+module.exports = { authenticate, signAccessToken, signTokens }

@@ -6,7 +6,7 @@ const router = express.Router()
 
 const ApiError = require('../../error/api_error')
 const { logger } = require('../../util/logger')
-const redis = require('../../config/redis')
+const { client: redis } = require('../../config/redis')
 
 const userRepository = require('../user/repository')
 
@@ -46,26 +46,60 @@ router.post('/login', (req, res, next) => {
                 user: req.body.username,
             })
             const tokens = signTokens(req)
-            redis
-                .connect()
-                .then(() => {
-                    logger.info({
-                        message: 'Setting roles',
-                        Target: 'Redis',
-                        user: req.body.username,
-                    })
-                    redis.set(`${req.body.username}Roles`, orgData)
-                })
-                .then(() => {
-                    logger.info({
-                        message: ' Setting token',
-                        Target: 'Redis',
-                        user: req.body.username,
-                    })
-                    redis.set(`${req.body.username}Token`, tokens.refreshToken)
-                })
-                .catch((err) => logger.error(err))
+            // if (redis.isOpen) {
 
+            // write(
+            //     redis.set(`${req.body.username}Roles`, JSON.stringify(orgData)),
+            // ).catch((err) => {
+            //     logger.error({
+            //         message: 'Failed to set roles.',
+            //         Target: 'Redis',
+            //         user: req.body.username,
+            //         error: err,
+            //     })
+            // })
+            Promise.all([
+                redis
+                    .set(
+                        `${req.body.username}Token`,
+                        JSON.stringify(tokens.refreshToken),
+                    )
+                    .then(
+                        logger.info({
+                            message: ' Setting token',
+                            Target: 'Redis',
+                            user: req.body.username,
+                        }),
+                    )
+                    .catch((err) => {
+                        logger.error({
+                            message: 'Failed to set token.',
+                            Target: 'Redis',
+                            user: req.body.username,
+                            error: err,
+                        })
+                    }),
+                redis
+                    .set(`${req.body.username}Roles`, JSON.stringify(orgData))
+                    .then(
+                        logger.info({
+                            message: 'Setting roles',
+                            Target: 'Redis',
+                            user: req.body.username,
+                        }),
+                    )
+                    .catch((err) => {
+                        logger.error({
+                            message: 'Failed to set roles.',
+                            Target: 'Redis',
+                            user: req.body.username,
+                            error: err,
+                        })
+                    }),
+            ])
+            return tokens
+        })
+        .then((tokens) => {
             logger.info({
                 message: 'Login successful',
                 user: req.body.username,

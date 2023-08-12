@@ -36,18 +36,6 @@ client
         logger.error(err)
     })
 
-async function executeCommands(callbacks) {
-    const values = await Promise.all(callbacks)
-    await client.quit()
-    return values
-}
-
-async function executeCommand(callback) {
-    const values = await callback()
-    await client.quit()
-    return values
-}
-
 client.on('connect', (err) => logger.info('Redis client connected.', err))
 client.on('error', (err) => {
     logger.warn('Redis client error.', err)
@@ -55,4 +43,4 @@ client.on('error', (err) => {
 client.on('ready', (err) => logger.info('Redis client ready to use.', err))
 client.on('end', (err) => logger.info('Redis client disconnected.', err))
 
-module.exports = { client, executeCommands, executeCommand }
+module.exports = { client }

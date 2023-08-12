@@ -1,28 +1,30 @@
-class ApiError {
-    constructor(code, message, type) {
+class ApiError extends Error {
+    constructor(code, message, name, wrappedError) {
+        super(message)
         this.code = code
+        if (wrappedError) this.stack += wrappedError.stack
         this.message = message
-        this.type = type
+        this.name = name
     }
 
     toString() {
-        return JSON.stringify({ message: this.message, type: this.type })
+        return JSON.stringify({ message: this.message, type: this.name })
     }
 
-    static NotFoundError(msg = null) {
-        return new ApiError(404, msg, 'NotFoundError')
+    static NotFoundError(msg = null, wrappedError = null) {
+        return new ApiError(404, msg, 'NotFoundError', wrappedError)
     }
 
-    static ForbiddenError(msg = null) {
-        return new ApiError(403, msg, 'ForbiddenError')
+    static ForbiddenError(msg = null, wrappedError = null) {
+        return new ApiError(403, msg, 'ForbiddenError', wrappedError)
     }
 
-    static UnauthorizedError(msg = null) {
-        return new ApiError(401, msg, 'UnauthorizedError')
+    static UnauthorizedError(msg = null, wrappedError = null) {
+        return new ApiError(401, msg, 'UnauthorizedError', wrappedError)
     }
 
-    static ServiceUnavailableError(msg = null) {
-        return new ApiError(503, msg, 'UnauthorizedError')
+    static ServiceUnavailableError(msg = null, wrappedError = null) {
+        return new ApiError(503, msg, 'UnauthorizedError', wrappedError)
     }
 }
 
