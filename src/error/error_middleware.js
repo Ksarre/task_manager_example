@@ -9,8 +9,6 @@ function errorResponse(type, message) {
 }
 
 function ApiErrorMiddleware(err, req, res, next) {
-    // might send a slack message or an email or just log to aws
-    // should also elevate severity of the error if its a runtime error
     if (err instanceof ApiError) {
         logger.error(err)
         res.status(err.code).json(errorResponse(err.name, err.message))

@@ -1,15 +1,10 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
-const { createLogger, format, transports } = require('winston')
+const { createLogger, format, transports, config } = require('winston')
 
 const { combine, timestamp } = format
 
-// const timeStampPrettyPrint = format.combine(
-//     format.timestamp(),
-//     format.prettyPrint(),
-// )
-
 const logger = createLogger({
     level: process.env.LOG_LEVEL || 'info',
+    levels: config.syslog.levels,
     format: combine(
         format.errors({ stack: true }),
         format.json(),

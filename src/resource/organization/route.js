@@ -1,5 +1,4 @@
 // TODO: need organization checks and role checks
-// Include auth
 const express = require('express')
 const { authenticate } = require('../../JWT/authenticationMiddleware')
 
@@ -10,7 +9,6 @@ const { loggingEntryMiddleware } = require('../../util/logger')
 const { add, remove } = require('./repository')
 const { logger } = require('../../util/logger')
 
-// Check JWT for cached data. If none reject the request
 router
     .post(
         '/organization/c',
@@ -27,7 +25,10 @@ router
         authenticate,
         loggingEntryMiddleware,
         (req, res, next) => {},
-        // should delete tickets, comments, and user to org records
+        // a 'soft' delete; marks organization inactive
+        // organization data cannot be read by non admins
+        // no further writes on organization resources should be allowed
+        // store org data in redis after first db query to avoid accessing for every resource request
     )
 
 module.exports = router

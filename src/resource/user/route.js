@@ -10,12 +10,10 @@ const saltRounds = +process.env.SALT_ROUNDS
 
 router.post('/register', loggingEntryMiddleware, (req, res, next) => {
     logger.info(`Registering user @user:${req.body.username}`)
-    // parse out username, password, email
     const prehash = {
         plaintextPassword: req.body.password,
     }
 
-    // generate salt, then append salt to the password, finally hash the result
     logger.info(`Generating salt @user:${req.body.username}`)
     bcrypt
         .genSalt(saltRounds)

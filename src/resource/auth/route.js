@@ -27,7 +27,6 @@ router.post('/login', (req, res, next) => {
         .then((compare) => {
             logger.info(`Hash retrieved. @user: ${req.body.username}`)
             if (compare) {
-                // identity proven. fetch all organizations and permissions; append to user
                 logger.info({
                     message: 'Retrieving roles',
                     Target: 'Postgres',
@@ -46,18 +45,7 @@ router.post('/login', (req, res, next) => {
                 user: req.body.username,
             })
             const tokens = signTokens(req)
-            // if (redis.isOpen) {
 
-            // write(
-            //     redis.set(`${req.body.username}Roles`, JSON.stringify(orgData)),
-            // ).catch((err) => {
-            //     logger.error({
-            //         message: 'Failed to set roles.',
-            //         Target: 'Redis',
-            //         user: req.body.username,
-            //         error: err,
-            //     })
-            // })
             Promise.all([
                 redis
                     .set(

@@ -5,7 +5,6 @@ const convertRaw = async (result) => {
     return result.get({ plain: true })
 }
 
-// add conditional ConnectionTimeout error to the catch
 function withRetry(asyncAction, retries) {
     if (retries <= 0) {
         return Promise.resolve().then(asyncAction)
