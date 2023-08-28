@@ -1,35 +1,37 @@
 {
-  "name": "y",
-  "version": "1.0.0",
-  "description": "task management system",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev-start": "node --watch-path=./src src/index.js",
-    "prod-start": "node src/index.js"
-  },
-  "author": "Kyle S.",
-  "license": "ISC",
-  "dependencies": {
-    "bcrypt": "^5.1.0",
-    "express": "^4.17.3",
-    "jest": "^27.5.1",
-    "jsonwebtoken": "^9.0.0",
-    "pg": "^8.7.3",
-    "sequelize": "^6.19.1",
-    "winston": "^3.9.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.3.1",
-    "eslint": "^8.40.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-config-standard": "^17.0.0",
-    "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-n": "^15.6.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-promise": "^6.1.1",
-    "prettier": "^2.8.1",
-    "nodemon": "^2.0.22"
-  }
+    "name": "y",
+    "version": "1.0.0",
+    "description": "task management system",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "dev-start": "node --watch-path=./src src/index.js",
+        "prod-start": "node src/index.js"
+    },
+    "author": "Kyle S.",
+    "license": "ISC",
+    "dependencies": {
+        "bcrypt": "^5.1.0",
+        "express": "^4.17.3",
+        "jest": "^27.5.1",
+        "jsonwebtoken": "^9.0.0",
+        "pg": "^8.7.3",
+        "redis": "^4.6.7",
+        "sequelize": "^6.19.1",
+        "uuid": "^9.0.0",
+        "winston": "^3.9.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.3.1",
+        "eslint": "^8.40.0",
+        "eslint-config-airbnb-base": "^15.0.0",
+        "eslint-config-prettier": "^8.5.0",
+        "eslint-config-standard": "^17.0.0",
+        "eslint-plugin-import": "^2.27.5",
+        "eslint-plugin-n": "^15.6.0",
+        "eslint-plugin-prettier": "^4.2.1",
+        "eslint-plugin-promise": "^6.1.1",
+        "nodemon": "^3.0.1",
+        "prettier": "^2.8.1"
+    }
 }

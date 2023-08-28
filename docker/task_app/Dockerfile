@@ -10,6 +10,8 @@ FROM node as dev
 WORKDIR /usr/src/task_manager
 COPY package*.json .
 RUN npm install
+COPY certificate.pem etc/ssl/certs/
+COPY key.pem etc/ssl/certs/
 ENV PORT 3000
 ENV NODE_ENV dev
 EXPOSE $PORT

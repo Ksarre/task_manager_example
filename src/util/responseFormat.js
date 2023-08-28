@@ -1,5 +1,5 @@
 function sendResponse(res, code, body) {
-  res.status(code).send(body);
+    res.status(code).send(body)
 }
 
-module.exports = sendResponse;
+module.exports = sendResponse
